@@ -41,7 +41,7 @@ cd fiap-dclt-aula01
 - **GitHub Actions** - CI/CD
 - **Jenkins** - CI/CD alternativo
 - **Docker** - Containerização
-- **AWS** - Cloud (EC2, ECR, ECS)
+- **AWS** - Cloud (ECR, ECS)
 
 ## 🧪 Testar Localmente
 
