@@ -791,4 +791,283 @@ kubectl logs -n jenkins jenkins-agent-abc123 -c node
 
 ---
 
+## 🎯 Parte 6: Demonstração Prática no Jenkins
+
+### Passo 13: Pontos para Mostrar na Interface Jenkins
+
+**1. Dashboard Principal**
+- ✅ Visão geral de jobs
+- ✅ Status dos últimos builds (verde/vermelho)
+- ✅ Fila de execução
+- ✅ Estatísticas de sucesso/falha
+
+**Acessar:** `http://<JENKINS-URL>/`
+
+---
+
+**2. Configuração do Job**
+
+**Mostrar:**
+- ✅ **General:** Nome, descrição, parâmetros
+- ✅ **Source Code Management:** Integração com GitHub
+  - Repository URL
+  - Branch Specifier (`*/main`)
+  - Credentials (se necessário)
+- ✅ **Build Triggers:** 
+  - Poll SCM: `H/5 * * * *` (verifica a cada 5 min)
+  - GitHub webhook (ideal para produção)
+- ✅ **Pipeline:** 
+  - Definition: Pipeline script from SCM
+  - Script Path: `Jenkinsfile`
+
+**Acessar:** `Job > Configure`
+
+---
+
+**3. Histórico de Builds**
+
+**Mostrar:**
+- ✅ Lista de builds (#1, #2, #3...)
+- ✅ Status de cada build (✅ Success, ❌ Failed, ⏸️ Aborted)
+- ✅ Duração de cada build
+- ✅ Quem disparou o build (usuário ou SCM)
+- ✅ Commit que gerou o build
+
+**Acessar:** `Job > Build History`
+
+---
+
+**4. Console Output de um Build**
+
+**Mostrar:**
+- ✅ Log completo da execução
+- ✅ Cada stage sendo executado
+- ✅ Comandos executados (`npm ci`, `npm test`)
+- ✅ Output dos testes
+- ✅ Tempo de cada stage
+- ✅ Mensagem final (SUCCESS ou FAILED)
+
+**Acessar:** `Job > Build #X > Console Output`
+
+**Exemplo de output:**
+```
+Started by user admin
+Running in Durability level: MAX_SURVIVABILITY
+[Pipeline] Start of Pipeline
+[Pipeline] node
+Running on jenkins-agent-xxxxx
+[Pipeline] stage (📥 Checkout)
+[Pipeline] checkout
+Cloning repository...
+[Pipeline] stage (📦 Dependencies)
+[Pipeline] sh
++ npm ci
+added 150 packages in 5s
+[Pipeline] stage (🧪 Tests)
++ npm test
+PASS tests/app.test.js
+  ✓ GET /health (25ms)
+  ✓ GET /api/todos (15ms)
+Tests: 8 passed, 8 total
+[Pipeline] End of Pipeline
+Finished: SUCCESS
+```
+
+---
+
+**5. Blue Ocean (Interface Moderna)**
+
+**Mostrar:**
+- ✅ Visualização gráfica do pipeline
+- ✅ Stages em paralelo (visual)
+- ✅ Tempo de cada stage (barras coloridas)
+- ✅ Logs por stage (clique em cada stage)
+- ✅ Comparação entre builds
+
+**Acessar:** `Open Blue Ocean` (menu lateral)
+
+**Vantagens:**
+- 🎨 Interface mais visual e moderna
+- 📊 Melhor para demonstrar pipelines complexos
+- 🔍 Fácil identificar onde falhou
+
+---
+
+**6. Kubernetes Plugin - Agents Dinâmicos**
+
+**Mostrar:**
+- ✅ **Manage Jenkins > Nodes**
+  - Jenkins controller (master)
+  - Agents dinâmicos (aparecem durante build)
+- ✅ **Durante execução:**
+  - Agent sendo criado automaticamente
+  - Status: "Building" ou "Idle"
+  - Labels: `node`, `docker`
+- ✅ **Após build:**
+  - Agent deletado automaticamente
+  - Economia de recursos
+
+**Acessar:** `Manage Jenkins > Nodes`
+
+**Demonstrar no terminal:**
+```bash
+# Ver pods de agents sendo criados
+kubectl get pods -n jenkins -w
+
+# Durante build:
+# jenkins-agent-abc123    2/2     Running   0          15s  ← Criado!
+
+# Após build:
+# jenkins-agent-abc123    0/2     Terminating   0      2m   ← Deletado!
+```
+
+---
+
+**7. Credentials Management**
+
+**Mostrar:**
+- ✅ Como armazenar credenciais seguras
+- ✅ Tipos: Username/Password, Secret Text, SSH Key
+- ✅ Uso no pipeline: `credentials('github-token')`
+- ✅ Credenciais mascaradas nos logs
+
+**Acessar:** `Manage Jenkins > Credentials`
+
+**Exemplo no Jenkinsfile:**
+```groovy
+environment {
+    DOCKER_CREDS = credentials('dockerhub-credentials')
+    GITHUB_TOKEN = credentials('github-token')
+}
+```
+
+---
+
+**8. Pipeline Syntax Generator**
+
+**Mostrar:**
+- ✅ Ferramenta para gerar código Jenkinsfile
+- ✅ Snippets prontos para:
+  - Checkout SCM
+  - Docker commands
+  - Kubernetes pod templates
+  - Notifications (Slack, email)
+
+**Acessar:** `Job > Pipeline Syntax`
+
+**Demonstrar:**
+1. Escolher step: "checkout: Check out from version control"
+2. Configurar: Repository URL, Branch
+3. Gerar código automaticamente
+4. Copiar para Jenkinsfile
+
+---
+
+**9. Build com Parâmetros**
+
+**Mostrar:**
+- ✅ Como criar job parametrizado
+- ✅ Tipos de parâmetros:
+  - String (ex: branch name)
+  - Choice (ex: ambiente: dev/staging/prod)
+  - Boolean (ex: skip tests?)
+- ✅ Uso no pipeline: `${params.BRANCH_NAME}`
+
+**Exemplo:**
+```groovy
+pipeline {
+    parameters {
+        choice(name: 'ENVIRONMENT', choices: ['dev', 'staging', 'prod'])
+        booleanParam(name: 'SKIP_TESTS', defaultValue: false)
+    }
+    stages {
+        stage('Deploy') {
+            steps {
+                echo "Deploying to ${params.ENVIRONMENT}"
+            }
+        }
+    }
+}
+```
+
+---
+
+**10. Comparação Visual: Jenkins vs GitHub Actions**
+
+**Mostrar lado a lado:**
+
+| Aspecto | Jenkins | GitHub Actions |
+|---------|---------|----------------|
+| **Interface** | Web UI completa | Aba Actions no GitHub |
+| **Logs** | Console Output | Logs expandíveis por step |
+| **Visualização** | Blue Ocean | Gráfico de workflow |
+| **Agents** | Pods dinâmicos no K8s | Runners (GitHub-hosted) |
+| **Configuração** | `Jenkinsfile` | `.github/workflows/*.yml` |
+| **Triggers** | Poll SCM, Webhooks | `on: push`, `pull_request` |
+| **Plugins** | 1800+ plugins | GitHub Marketplace |
+| **Custo** | Infraestrutura própria | 2000 min/mês grátis |
+
+---
+
+**11. Demonstração de Falha no Pipeline**
+
+**Mostrar:**
+- ✅ Forçar erro no código (ex: teste falhando)
+- ✅ Build fica vermelho (❌ FAILED)
+- ✅ Email/notificação de falha
+- ✅ Console output mostra erro exato
+- ✅ Stage que falhou destacado (Blue Ocean)
+
+**Exemplo:**
+```bash
+# Editar teste para falhar
+# Fazer commit e push
+# Observar build falhar
+# Mostrar onde falhou no console
+```
+
+---
+
+**12. Integração com GitHub**
+
+**Mostrar:**
+- ✅ **GitHub Webhook:**
+  - Settings > Webhooks
+  - Payload URL: `http://<JENKINS-URL>/github-webhook/`
+  - Events: Push, Pull Request
+- ✅ **Status Check no GitHub:**
+  - Commit mostra status do Jenkins
+  - ✅ ou ❌ ao lado do commit
+- ✅ **Branch Protection:**
+  - Require status checks to pass
+  - Jenkins build deve passar antes de merge
+
+---
+
+## 💡 Roteiro Sugerido para Demonstração
+
+### **Parte 1: Interface Básica (5 min)**
+1. Dashboard principal
+2. Criar/configurar job
+3. Executar build manualmente
+4. Ver console output
+
+### **Parte 2: Pipeline em Ação (5 min)**
+5. Mostrar Jenkinsfile
+6. Fazer commit e push
+7. Observar build automático
+8. Ver stages no Blue Ocean
+
+### **Parte 3: Kubernetes Integration (5 min)**
+9. Mostrar agents dinâmicos (Nodes)
+10. Ver pods no Kubernetes (`kubectl get pods -n jenkins -w`)
+11. Demonstrar escalabilidade
+
+### **Parte 4: Comparação (3 min)**
+12. Abrir GitHub Actions do mesmo projeto
+13. Comparar interfaces
+14. Discutir prós e contras
+
+---
+
 **FIM DO VÍDEO 1.3** ✅
